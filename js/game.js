@@ -1,6 +1,6 @@
 let gameScene = new Phaser.Scene('Game');
 
-let oneRadian = Math.PI / 180;
+const oneRadian = Math.PI / 180;
 
 // Runs first and is used to set all the variables
 gameScene.init = function() {
@@ -55,7 +55,7 @@ gameScene.create = function() {
 	this.eatingout.setScale(.3);
 	this.eatingout.percentTaken = .3;
 	
-	this.moneyBag = this.add.sprite(495, 300, 'moneybag');
+	this.moneyBag = this.physics.add.image(495, 300, 'moneybag');
 	this.moneyBag.setScale(.15);
 	this.moneyBag.firingAngle = 8;
 	this.moneyBag.rotateDirection = function (randianAngle) {
@@ -75,6 +75,7 @@ gameScene.create = function() {
 	this.leftKey = 
 		this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.LEFT);
 		
+	this.spaceBar = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
 };
 
 // Runs after every frame and is used to check 
@@ -93,7 +94,22 @@ gameScene.update = function() {
 		this.moneyBag.rotateDirection(oneRadian * -1);
 	}	
 	
-
+	if (this.spaceBar.isDown) {
+    	this.physics.velocityFromRotation(
+			this.moneyBag.firingAngle * oneRadian,
+			-150,
+			this.moneyBag.body.velocity
+		);
+		this.moneyBag.body.gravity.y = 50;
+	}
+	
+	if (this.moneyBag.x <= 10 || this.moneyBag.y > 650) {
+		this.moneyBag.body.gravity.y = 0;
+		this.moneyBag.body.setVelocity(0,0);
+		this.moneyBag.x = 495;
+		this.moneyBag.y = 300;
+		this.moneyBag.rotateDirection(oneRadian * this.cannon.angle);
+	}
 			
 
 };
@@ -103,7 +119,14 @@ let config = {
 	type: Phaser.AUTO, // Will use webgl if avialable overwise it will use the canvas
 	width: 640,
 	height: 360,
-	scene: gameScene
+	scene: gameScene,
+	physics: {
+        default: 'arcade',
+        arcade: {
+            gravity: { z: 300 },
+            debug: true
+        }
+    }
 };
 
 // create an new game and pass configuration to it
