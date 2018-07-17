@@ -7,6 +7,8 @@ gameScene.init = function() {
 	this.moneyYears = []; // The number of money invested in that year
 	this.interestRate = .09; // Assuming 9% interest rate
 	this.moneyDistanceFromCannon = -92;
+	this.firingMoney = false;
+	this.movingSprites = [];
 };
 
 // Runs second and is used to set all the images used in the game
@@ -39,19 +41,15 @@ gameScene.create = function() {
 		console.log(this.cannon, 'cannon')
 
 	// Bad Guys
-	this.creditCard = this.add.sprite(440, 100, 'creditcard');
+	this.creditCard = this.add.sprite(410, 300, 'creditcard');
 	this.creditCard.setScale(.5);
 	this.creditCard.percentTaken = .3;
 	
-	this.car = this.add.sprite(320, 100, 'car');
+	this.car = this.add.sprite(300, 100, 'car');
 	this.car.setScale(.2);
 	this.car.percentTaken = .3;
 
-	this.car = this.add.sprite(320, 100, 'car');
-	this.car.setScale(.2);
-	this.car.percentTaken = .3;
-
-	this.eatingout = this.add.sprite(200, 100, 'eatingout');
+	this.eatingout = this.add.sprite(150, 100, 'eatingout');
 	this.eatingout.setScale(.3);
 	this.eatingout.percentTaken = .3;
 	
@@ -66,6 +64,18 @@ gameScene.create = function() {
 			80 // radius aka distance from the pivot point to what is being rotated around
 		);
 	};
+	
+	this.movingSprites.push(this.eatingout);
+	this.movingSprites.push(this.car);
+	this.movingSprites.push(this.creditCard);
+	this.movingSprites.push(this.pig);
+	
+	this.movingSprites.forEach(function(sprite) {
+		let speedDirection = Math.random() > .5 ? 1 : -1;
+		let speed = Math.random() * 2 + 2 * speedDirection;
+		sprite.speedY = speed;
+	});
+	
 	this.moneyBag.rotateDirection(0);
 		
 	// Keyboard Inputputs
@@ -79,28 +89,34 @@ gameScene.create = function() {
 };
 
 // Runs after every frame and is used to check 
-// conditions and control things in thing in the game
+// conditions and control thi     ngs in thing in the game
 // This may run 60 times per second and is the last thing that is ran
 gameScene.update = function() {
-	if (this.upKey.isDown && this.cannon.angle < 85) {
+	if (this.upKey.isDown && this.cannon.angle < 85 ) {
 		this.cannon.angle += 1;
-		this.moneyBag.firingAngle += 1;	
-		this.moneyBag.rotateDirection(oneRadian);
+		this.moneyBag.firingAngle += 1;
+		if (!this.firingMoney) {
+			this.moneyBag.rotateDirection(oneRadian);
+		}
 	}
 	
 	if (this.leftKey.isDown && this.cannon.angle > -10) {
 		this.cannon.angle -= 1;
 		this.moneyBag.firingAngle -= 1;
-		this.moneyBag.rotateDirection(oneRadian * -1);
+		if (!this.firingMoney) {
+			this.moneyBag.rotateDirection(oneRadian * -1);
+		}
 	}	
+	
 	
 	if (this.spaceBar.isDown) {
     	this.physics.velocityFromRotation(
 			this.moneyBag.firingAngle * oneRadian,
-			-150,
+			-200,
 			this.moneyBag.body.velocity
 		);
 		this.moneyBag.body.gravity.y = 50;
+		this.firingMoney = true;
 	}
 	
 	if (this.moneyBag.x <= 10 || this.moneyBag.y > 650) {
@@ -109,8 +125,23 @@ gameScene.update = function() {
 		this.moneyBag.x = 495;
 		this.moneyBag.y = 300;
 		this.moneyBag.rotateDirection(oneRadian * this.cannon.angle);
+		this.firingMoney = false;
 	}
-			
+	
+	
+	this.movingSprites.forEach(function(sprite) {
+		if (sprite.y <= 10) {
+			sprite.y = 11;
+			sprite.speedY *= -1;
+		}
+		
+		if (sprite.y >= 300) {
+			sprite.y = 299;
+			sprite.speedY *= -1;	
+		}
+
+		sprite.y += sprite.speedY;
+	});		
 
 };
 
