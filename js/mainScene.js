@@ -140,6 +140,7 @@ mainScene.newTurn = () => {
 	mainScene.yearsLeftText.setText('Years Left: ' + mainScene.turns * mainScene.numberOfYearsPerTurn)
 	
 	if (mainScene.turns == 0) {
+		// TODO Pass data to get final result
 		mainScene.enemySprites.forEach((sprite) => {
 			console.log(sprite, 'sprite');
 			console.log(sprite.moneyInvested, 'money to invest');	
@@ -147,7 +148,7 @@ mainScene.newTurn = () => {
 		console.log(mainScene.moneyInvestYears);
 		console.log(mainScene.totalInvestment(mainScene.moneyInvestYears));
 		console.log(mainScene.moneyNotInvestedYears);
-		mainScene.scene.start('ResultScene')
+		mainScene.scene.start('ResultScene', {'test': 'it'})
 	}
 
 }
