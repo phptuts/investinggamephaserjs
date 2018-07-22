@@ -2,7 +2,9 @@ let mainScene = new Phaser.Scene('MainScene');
 
 const oneRadian = Math.PI / 180;
 
-// Runs first and is used to set all the variables
+/**	
+ * Sets up all the initial values for the game.
+ */
 mainScene.init = () => {
 	mainScene.moneyInvestYears = []; // The number of money invested in that year
 	mainScene.moneyNotInvestedYears = [];
@@ -14,13 +16,15 @@ mainScene.init = () => {
 	mainScene.moneyBagScale = .15; // This is the scale we are setting money bag image
 	mainScene.percentToTakeOff = 0; // This is the percentage taken by the bad sprites of the money
 	mainScene.moneyToInvest = 2000; // This is amount that is invested per year
-	mainScene.turns = 1; // The number of turns per game
+	mainScene.turns = 10; // The number of turns per game
 	mainScene.numberOfYearsPerTurn = 3; // number of years per turn
 	mainScene.scoreText = null; // the score text
 	mainScene.yearsLeftText = null; // the years text
 };
 
-// Runs second and is used to set all the images used in the game
+/**	
+ * Loads all the images
+ */
 mainScene.preload = () => {
 	mainScene.load.image('background', 'images/background.jpg');
 	mainScene.load.image('pig', 'images/pig.png');
@@ -31,7 +35,9 @@ mainScene.preload = () => {
 	mainScene.load.image('moneybag', 'images/money.png');
 };
 
-// Runs third and is used to position all the images initially in the game
+/**
+ * Positions all the characters on the screen
+ */ 
 mainScene.create = () => {
 
 	// positions the background
@@ -93,11 +99,15 @@ mainScene.create = () => {
 	});
 
 	mainScene.moneyBag.rotateDirection(0);
-	
+	mainScene.moneyBag.isOffBoard = () => {
+		return mainScene.moneyBag.x <= 10 || 
+			mainScene.moneyBag.y > 650 || 
+			mainScene.moneyBag.y < 10
+	};
+
 	// Set the score text
 	mainScene.scoreText = mainScene.add.text(40, 5, 'Invested: $0', { fontSize: '24px', fill: '#000' });
-	mainScene.yearsLeftText = mainScene.add.text(330
-									   , 5, 'Years Left: ' + mainScene.turns * mainScene.numberOfYearsPerTurn, { fontSize: '24px', fill: '#000' });
+	mainScene.yearsLeftText = mainScene.add.text(330, 5, 'Years Left: ' + mainScene.turns * mainScene.numberOfYearsPerTurn, { fontSize: '24px', fill: '#000' });
 
 	// Keyboard Inputputs
 	mainScene.upKey = 
@@ -111,6 +121,9 @@ mainScene.create = () => {
 	mainScene.resetPlayingField();
 };
 
+/**
+ * Resets the playing field values
+ */
 mainScene.resetPlayingField = () => {
 	mainScene.moneyBag.body.gravity.y = 0;
 	mainScene.moneyBag.body.setVelocity(0,0);
@@ -125,6 +138,10 @@ mainScene.resetPlayingField = () => {
 	});
 };
 
+/** 
+ * Executes every turn and is used to end the game
+ * Calculates investment dollars lost to sprites
+ */
 mainScene.newTurn = () => {
 
 	mainScene.enemySprites.forEach((sprite) => {
@@ -138,41 +155,31 @@ mainScene.newTurn = () => {
 	mainScene.resetPlayingField();
 	mainScene.turns -= 1;
 	mainScene.yearsLeftText.setText('Years Left: ' + mainScene.turns * mainScene.numberOfYearsPerTurn)
-	
+
 	if (mainScene.turns == 0) {
-		// TODO Pass data to get final result
-		mainScene.enemySprites.forEach((sprite) => {
-			console.log(sprite, 'sprite');
-			console.log(sprite.moneyInvested, 'money to invest');	
-		});
-		console.log(mainScene.moneyInvestYears);
-		console.log(mainScene.totalInvestment(mainScene.moneyInvestYears));
-		console.log(mainScene.moneyNotInvestedYears);
-		mainScene.scene.start('ResultScene', {'test': 'it'})
+		// This means the game is over.
+		mainScene.scene.start('ResultScene', mainScene.finalResult())
 	}
 
-}
+};
 
-// Runs after every frame and is used to check 
-// conditions and control things in thing in the game
-// mainScene.may run 60 times per second and is the last thing that is ran
+/**	
+ * Runs repeated
+ * 1) Checks if the cannon should move and moves it
+ * 2) Checks if money bag should be fired.
+ * 3) Checks if money bag hit the sprite
+ * 4) Checks if the money bag is out of bounds or hit the pig and updates the investments
+ */
 mainScene.update = () => {
 
-	if (mainScene.upKey.isDown && mainScene.cannon.angle < 85 ) {
-		mainScene.cannon.angle += 1;
-		mainScene.moneyBag.firingAngle += 1;
+	if (mainScene.moveCannon()) {
+		let direction = mainScene.upKey.isDown ? 1 : -1;
+		mainScene.cannon.angle += direction;
+		mainScene.moneyBag.firingAngle += direction;
 		if (!mainScene.firingMoney) {
-			mainScene.moneyBag.rotateDirection(oneRadian);
+			mainScene.moneyBag.rotateDirection(oneRadian * direction);
 		}
 	}
-
-	if (mainScene.leftKey.isDown && mainScene.cannon.angle > -10) {
-		mainScene.cannon.angle -= 1;
-		mainScene.moneyBag.firingAngle -= 1;
-		if (!mainScene.firingMoney) {
-			mainScene.moneyBag.rotateDirection(oneRadian * -1);
-		}
-	}	
 
 
 	if (mainScene.spaceBar.isDown && !mainScene.firingMoney) {
@@ -184,8 +191,8 @@ mainScene.update = () => {
 		mainScene.moneyBag.body.gravity.y = 50;
 		mainScene.firingMoney = true;
 	}
-	
-	mainScene.movingSprites.forEach(function(sprite) {
+
+	mainScene.movingSprites.forEach((sprite) => {
 		if (sprite.y <= 70) {
 			sprite.y = 70;
 			sprite.speedY *= -1;
@@ -199,42 +206,66 @@ mainScene.update = () => {
 		sprite.y += sprite.speedY;
 	});	
 
-	if (mainScene.moneyBag.x <= 10 || mainScene.moneyBag.y > 650 || mainScene.moneyBag.y < 10) {
-		mainScene.calcInvestment(false);
-		mainScene.newTurn();
-	}
-
-	mainScene.enemySprites.forEach((sprite) => {
-		let hasCollisionOccurred = Phaser.Geom.Intersects.RectangleToRectangle(
-			sprite.getBounds(), 
-			mainScene.moneyBag.getBounds()
-		);
-		if (hasCollisionOccurred && !sprite.hasBeenHit) {
-			mainScene.moneyBag.setScale(mainScene.moneyBag.scaleY *.8);
-			sprite.hasBeenHit = true;
-			mainScene.percentToTakeOff += sprite.percentTaken;
-			console.log('lost some money');
-		}
+	mainScene
+		.enemySprites
+		.filter(sprite => mainScene.hasSpriteCollidedWithEnemy(sprite))
+		.forEach((sprite) => {
+		mainScene.moneyBag.setScale(mainScene.moneyBag.scaleY *.8);
+		sprite.hasBeenHit = true;
+		mainScene.percentToTakeOff += sprite.percentTaken;
 	});
 
-	let hasMoneyHitPig = Phaser.Geom.Intersects.RectangleToRectangle(
+
+	if (mainScene.hasMoneyHitPig() || mainScene.moneyBag.isOffBoard()) {
+		mainScene.addUpInvestmentMoneyPerTurn(mainScene.hasMoneyHitPig());
+		mainScene.scoreText.setText('Invested: $' + mainScene.sumMoneyInvested().toLocaleString('en') );
+		mainScene.newTurn();
+	}
+};
+
+/**	
+ * Returns true if the cannon should move.
+ */
+mainScene.moveCannon = () => {
+	return (mainScene.leftKey.isDown && mainScene.cannon.angle > -10) ||
+		(mainScene.upKey.isDown && mainScene.cannon.angle < 85);
+};
+
+
+/**	
+ * Sums the total money invested without interest
+ */
+mainScene.sumMoneyInvested = () => {
+	return mainScene.moneyInvestYears.reduce(function(total,moneyInvestedThatYear) {
+		return total + moneyInvestedThatYear;
+	})
+};
+
+/** 
+ * Returns true if the sprite has collided with money and has not been marked as a hit.
+ */
+mainScene.hasSpriteCollidedWithEnemy = (sprite) => {
+	return Phaser.Geom.Intersects.RectangleToRectangle(
+		sprite.getBounds(), 
+		mainScene.moneyBag.getBounds()
+	) && !sprite.hasBeenHit;
+};
+
+/**
+ * Returns true if the pig was been hit with the money.
+ */
+mainScene.hasMoneyHitPig = () => {
+	return Phaser.Geom.Intersects.RectangleToRectangle(
 		mainScene.pig.getBounds(), 
 		mainScene.moneyBag.getBounds()
 	);
-
-	if (hasMoneyHitPig) {
-		mainScene.calcInvestment(true);
-		let totalMoneyInvested = mainScene.moneyInvestYears.reduce(function(total,moneyInvestedThatYear) {
-			return total + moneyInvestedThatYear;
-		})
-		mainScene.scoreText.setText('Invested: $' + totalMoneyInvested.toLocaleString('en') );
-		mainScene.newTurn();
-	}
-
-
 };
 
-mainScene.calcInvestment = (hitPig) => {
+/**	
+ * This function calculates the money that was either invest or lost for the years representing 
+ * the turn. 
+ */
+mainScene.addUpInvestmentMoneyPerTurn = (hitPig) => {
 	let moneyToInvestEveryYear = Math.ceil(((100 - mainScene.percentToTakeOff) / 100) * mainScene.moneyToInvest);
 	for (var i = 0; i < mainScene.numberOfYearsPerTurn; i += 1) {
 		mainScene.moneyInvestYears.push(hitPig ? moneyToInvestEveryYear : 0);
@@ -242,10 +273,51 @@ mainScene.calcInvestment = (hitPig) => {
 	}
 }
 
-mainScene.totalInvestment = (years) => {
+/**	
+ * This caculates the total amount of investment with interest applied
+ */
+mainScene.investmentsWithInterestTotaled = (years) => {
 	return years.reduce((totalMoney, yearOfMoney) => {
 		totalMoney *= (1 + mainScene.interestRate);
 		totalMoney += yearOfMoney;
 		return totalMoney;
 	});
+};
+
+mainScene.finalResult = () => {
+
+	
+	let digitalOptions =  {
+		minimumFractionDigits: 2,
+		maximumFractionDigits: 2
+	};
+	
+	let totalSaved = mainScene.sumMoneyInvested().toLocaleString('en', digitalOptions);
+
+	let totalInvested = mainScene
+							.investmentsWithInterestTotaled(mainScene.moneyInvestYears)
+							.toLocaleString('en', digitalOptions);
+	let totalNotInvested = mainScene
+						.investmentsWithInterestTotaled(mainScene.moneyNotInvestedYears)
+						.toLocaleString('en', digitalOptions);
+	let carCost = mainScene
+					.investmentsWithInterestTotaled(mainScene.car.moneyInvested)
+					.toLocaleString('en', digitalOptions);
+
+	let fastFoodCost = mainScene
+						.investmentsWithInterestTotaled(mainScene.car.moneyInvested)
+						.toLocaleString('en', digitalOptions);
+	
+	let creditCardCost = mainScene
+							.investmentsWithInterestTotaled(mainScene.creditCard.moneyInvested)
+							.toLocaleString('en', digitalOptions);
+
+	return {
+		totalSaved,
+		totalInvested,
+		totalNotInvested,
+		carCost,
+		fastFoodCost,
+		creditCardCost
+	};
 };

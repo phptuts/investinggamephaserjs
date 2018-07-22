@@ -5,12 +5,21 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Phaser Investing Game</title>
 	  <style>
-		  canvas {
+		  canvas, p {
 			  width: 100%;
+			  max-width: 1000px;
 		  }
+		  
 	  </style>
   </head>
   <body>
+	  <div id='phaser-canvas'></div>
+	  <h2>Controls</h2>
+	  <p>The space bar fires the money.</p>
+	  <p>The right arrow key moves the cannon down.</p>
+	  <p>The up arrow key moves the cannon up.</p>
+	  <h2>Instructions</h2>
+	  <p>The goal of the game is to make the money bag hit the pig and to avoid credit cards, fast food, and cars.  These things will make the money bag shrink by <strong>30 percent</strong>.  Each shot represents 3 years of saving and is invested in something that will make 9% a year.  You have a total of 30 years to save for retirement.  Good Luck!!!  </p>
 	  <script src="js/phaser.js"></script>
 	  <script src="js/resultScene.js"></script>
 	  <script src="js/mainScene.js"></script>
